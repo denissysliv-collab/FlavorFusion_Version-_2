@@ -44,6 +44,70 @@ function authMiddleware(req, res, next) {
   }
 }
 
+/** Проверка роли администратора */
+function checkAdmin(req, res, next) {
+  const pool = require('../database/pool');
+  
+  pool.query('SELECT role, is_blocked FROM users WHERE id = $1', [req.user.id])
+    .then(result => {
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Пользователь не найден' });
+      }
+      
+      const user = result.rows[0];
+      
+      if (user.is_blocked) {
+        return res.status(403).json({ 
+          error: 'Аккаунт заблокирован',
+          blocked: true 
+        });
+      }
+      
+      if (user.role !== 'admin') {
+        return res.status(403).json({ 
+          error: 'Доступ запрещён. Требуются права администратора.',
+          adminRequired: true 
+        });
+      }
+      
+      req.userRole = user.role;
+      req.userIsBlocked = user.is_blocked;
+      next();
+    })
+    .catch(err => {
+      console.error('Ошибка проверки прав администратора:', err);
+      res.status(500).json({ error: 'Ошибка сервера при проверке прав' });
+    });
+}
+
+/** Проверка на блокировку пользователя */
+function checkNotBlocked(req, res, next) {
+  const pool = require('../database/pool');
+  
+  pool.query('SELECT is_blocked, block_reason FROM users WHERE id = $1', [req.user.id])
+    .then(result => {
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Пользователь не найден' });
+      }
+      
+      const user = result.rows[0];
+      
+      if (user.is_blocked) {
+        return res.status(403).json({ 
+          error: 'Аккаунт заблокирован',
+          blocked: true,
+          reason: user.block_reason || 'Причина не указана'
+        });
+      }
+      
+      next();
+    })
+    .catch(err => {
+      console.error('Ошибка проверки блокировки:', err);
+      res.status(500).json({ error: 'Ошибка сервера при проверке статуса' });
+    });
+}
+
 /** Опциональная аутентификация: если токена нет — не ошибка */
 authMiddleware.optional = function (req, res, next) {
   try {
@@ -59,5 +123,9 @@ authMiddleware.optional = function (req, res, next) {
     next();
   }
 };
+
+// Экспортируем дополнительные middleware
+authMiddleware.checkAdmin = checkAdmin;
+authMiddleware.checkNotBlocked = checkNotBlocked;
 
 module.exports = authMiddleware;
