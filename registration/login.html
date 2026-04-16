@@ -526,12 +526,8 @@
                 const data = await response.json();
 
                 if (!response.ok) {
-                    // Проверяем, не заблокирован ли пользователь
-                    if (data.blocked) {
-                        passwordError.textContent = 'Аккаунт заблокирован. Обратитесь к администрации.';
-                    } else {
-                        passwordError.textContent = data.error || 'Неверный email или пароль';
-                    }
+                    // 401 — неверный email/пароль
+                    passwordError.textContent = data.error || 'Неверный email или пароль';
                     passwordError.style.display = 'block';
                     passwordInput.classList.add('error');
                     return;
@@ -552,30 +548,8 @@
                 // При загрузке index.html фронтенд вызовет GET /api/users/me
                 // для получения свежих данных напрямую из БД
 
-                alert('Вход выполнен успешно! Перенаправляем...');
-                
-                // Перенаправляем администраторов на admin.html, остальных на index.html
-                // Для этого делаем запрос к API для получения роли пользователя
-                try {
-                    const userResponse = await fetch(`${API_BASE}/users/me`, {
-                        headers: { 'Authorization': `Bearer ${data.token}` }
-                    });
-                    
-                    if (userResponse.ok) {
-                        const userData = await userResponse.json();
-                        if (userData.role === 'admin') {
-                            window.location.href = '../admin.html';
-                        } else {
-                            window.location.href = '../index.html';
-                        }
-                    } else {
-                        // Если не удалось получить данные, перенаправляем на главную по умолчанию
-                        window.location.href = '../index.html';
-                    }
-                } catch (err) {
-                    console.error('Ошибка получения данных пользователя:', err);
-                    window.location.href = '../index.html';
-                }
+                alert('Вход выполнен успешно! Перенаправляем на главную...');
+                window.location.href = '../index.html';
 
             } catch (err) {
                 console.error('Ошибка сети:', err);
