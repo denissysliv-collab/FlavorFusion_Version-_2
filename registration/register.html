@@ -363,27 +363,56 @@
         }
     </style>
 </head>
+<body>
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username');
+            const email = document.getElementById('email');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            const terms = document.getElementById('terms');
+            
+            let isValid = true;
+            
+            // Сброс ошибок
+            document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+            
+            // Валидация имени пользователя
+            if (username.value.trim().length < 3) {
+                showError('usernameError', username);
+                isValid = false;
+            }
+            
+            // Валидация email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email.value)) {
                 showError('emailError', email);
                 isValid = false;
             }
-
+            
+            // Валидация пароля
             if (password.value.length < 8) {
                 showError('passwordError', password);
                 isValid = false;
             }
-
+            
+            // Проверка совпадения паролей
             if (password.value !== confirmPassword.value) {
                 showError('confirmPasswordError', confirmPassword);
                 isValid = false;
             }
-
+            
+            // Проверка согласия с условиями
             if (!terms.checked) {
                 alert('Необходимо принять условия использования');
                 isValid = false;
             }
-
+            
             if (!isValid) return;
 
             // Показываем кнопку загрузки
