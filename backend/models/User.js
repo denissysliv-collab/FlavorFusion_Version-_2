@@ -48,13 +48,18 @@ const User = {
 
   /**
    * Найти пользователя по ID (без пароля)
+   * @param {boolean} includeRole - включить ли поля role и is_blocked
    */
-  async findById(id) {
-    const result = await pool.query(
-      `SELECT id, username, email, avatar_url, bio, created_at, updated_at
-       FROM users WHERE id = $1`,
-      [id]
-    );
+  async findById(id, includeRole = false) {
+    let query = `SELECT id, username, email, avatar_url, bio, created_at, updated_at
+                 FROM users WHERE id = $1`;
+    
+    if (includeRole) {
+      query = `SELECT id, username, email, avatar_url, bio, role, is_blocked, created_at, updated_at
+               FROM users WHERE id = $1`;
+    }
+    
+    const result = await pool.query(query, [id]);
     return result.rows[0];
   },
 

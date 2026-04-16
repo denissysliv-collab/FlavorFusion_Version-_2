@@ -16,9 +16,19 @@ const userController = {
    */
   async getMe(req, res, next) {
     try {
-      const user = await User.findById(req.user.id);
+      // Получаем пользователя с полями role и is_blocked
+      const user = await User.findById(req.user.id, true);
       if (!user) {
         return res.status(404).json({ error: 'Пользователь не найден' });
+      }
+
+      // Проверяем, не заблокирован ли пользователь
+      if (user.is_blocked) {
+        return res.status(403).json({ 
+          error: 'Аккаунт заблокирован',
+          blocked: true,
+          reason: user.block_reason || 'Причина не указана'
+        });
       }
 
       // Получаем рецепты пользователя
