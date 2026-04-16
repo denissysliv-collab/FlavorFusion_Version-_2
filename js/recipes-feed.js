@@ -256,9 +256,29 @@
     // Загрузить первую порцию
     loadRecipes();
 
-    // Кнопка «Загрузить ещё»
+    // Кнопка «Загрузить ещё» (оставляем как фолбэк)
     if (loadMoreBtn) {
         loadMoreBtn.addEventListener('click', loadRecipes);
+    }
+
+    // ====== INFINITE SCROLL (динамическая подгрузка при прокрутке) ======
+    const observerOptions = {
+        root: null,
+        rootMargin: '200px', // Начинать загрузку заранее (за 200px до конца)
+        threshold: 0
+    };
+
+    const loadMoreObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && hasMore && !isLoading) {
+                loadRecipes(false); // false = не скроллить, просто грузим
+            }
+        });
+    }, observerOptions);
+
+    // Наблюдаем за кнопкой "Загрузить ещё"
+    if (loadMoreBtn) {
+        loadMoreObserver.observe(loadMoreBtn);
     }
 
     // ====== ФИЛЬТРЫ (кнопки над лентой) ======
