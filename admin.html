@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель | FlavorFusion</title>
+    <link rel="stylesheet" href="style/main.css">
+    <link rel="stylesheet" href="style/admin.css">
+    <style>
+        /* Встроенные стили для админ-панели */
+        :root {
+            --primary-red: #FF6B6B;
+            --dark-gray: #2D3436;
+            --light-gray: #DFE6E9;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #d63031;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-gray);
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, var(--primary-red), #ff8787);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            font-size: 2rem;
+        }
+
+        .admin-nav {
+            display: flex;
+            gap: 15px;
+        }
+
+        .admin-nav button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .admin-nav button:hover,
+        .admin-nav button.active {
+            background: white;
+            color: var(--primary-red);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-red);
+        }
+
+        .stat-card .label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--dark-gray);
+            border-bottom: 2px solid var(--light-gray);
+            padding-bottom: 10px;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .users-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #ff5252;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: var(--dark-gray);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .recipe-card {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .recipe-card img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .recipe-info {
+            flex: 1;
+        }
+
+        .recipe-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--light-gray);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-admin {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .top-list {
+            list-style: none;
+        }
+
+        .top-list li {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .top-list img {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .top-list .rank {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-red);
+            width: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>🛡️ Админ-панель FlavorFusion</h1>
+            <nav class="admin-nav">
+                <button class="active" data-tab="stats">Статистика</button>
+                <button data-tab="users">Пользователи</button>
+                <button data-tab="recipes">Рецепты</button>
+                <button onclick="window.location.href='index.html'">На сайт</button>
+            </nav>
+        </header>
+
+        <div id="error-container"></div>
+
+        <!-- Секция статистики -->
+        <section id="stats-section" class="content-section">
+            <h2 class="section-title">📊 Общая статистика</h2>
+            <div class="stats-grid" id="stats-grid">
+                <div class="loading">Загрузка статистики...</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px;">
+                <div>
+                    <h3>🏆 Топ авторов по рецептам</h3>
+                    <ul class="top-list" id="top-authors"></ul>
+                </div>
+                <div>
+                    <h3>❤️ Топ рецептов по лайкам</h3>
+                    <ul class="top-list" id="top-recipes"></ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Секция пользователей -->
+        <section id="users-section" class="content-section" style="display: none;">
+            <h2 class="section-title">👥 Все пользователи</h2>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Аватар</th>
+                        <th>Имя</th>
+                        <th>Email</th>
+                        <th>Рецептов</th>
+                        <th>Лайков получено</th>
+                        <th>Подписчиков</th>
+                        <th>Дата регистрации</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <tr><td colspan="9" class="loading">Загрузка...</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Секция рецептов (загружается при клике на пользователя) -->
+        <section id="user-recipes-section" class="content-section" style="display: none;">
+            <h2 class="section-title">📖 Рецепты пользователя <span id="current-user-name"></span></h2>
+            <button class="btn btn-primary" onclick="showUsersList()" style="margin-bottom: 20px;">← Назад к пользователям</button>
+            <div id="user-recipes-list"></div>
+        </section>
+    </div>
+
+    <!-- Модальное окно редактирования рецепта -->
+    <div id="edit-recipe-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Редактирование рецепта</h2>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="edit-recipe-form">
+                <input type="hidden" id="edit-recipe-id">
+                <div class="form-group">
+                    <label for="edit-title">Название *</label>
+                    <input type="text" id="edit-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-description">Краткое описание *</label>
+                    <textarea id="edit-description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-full-description">Полное описание</label>
+                    <textarea id="edit-full-description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-image-url">URL изображения</label>
+                    <input type="text" id="edit-image-url">
+                </div>
+                <div class="form-group">
+                    <label for="edit-time">Время приготовления</label>
+                    <input type="text" id="edit-time">
+                </div>
+                <div class="form-group">
+                    <label for="edit-difficulty">Сложность</label>
+                    <select id="edit-difficulty">
+                        <option value="Легкая">Легкая</option>
+                        <option value="Средняя">Средняя</option>
+                        <option value="Высокая">Высокая</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-category">Категория</label>
+                    <input type="text" id="edit-category">
+                </div>
+                <div class="form-group">
+                    <label for="edit-servings">Порции</label>
+                    <input type="number" id="edit-servings">
+                </div>
+                <div class="form-group">
+                    <label for="edit-instructions">Инструкции *</label>
+                    <textarea id="edit-instructions" required style="min-height: 150px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-ingredients">Ингредиенты (JSON массив)</label>
+                    <textarea id="edit-ingredients" style="min-height: 100px; font-family: monospace;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        // Проверка прав администратора
+        async function checkAdminAccess() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showError('Требуется авторизация. Перенаправление на страницу входа...');
+                setTimeout(() => window.location.href = 'registration/login.html', 2000);
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showError('Сессия истекла. Перенаправление на страницу входа...');
+                        setTimeout(() => {
+                            localStorage.removeItem('token');
+                            window.location.href = 'registration/login.html';
+                        }, 2000);
+                        return false;
+                    }
+                    throw new Error('Ошибка проверки доступа');
+                }
+
+                const data = await response.json();
+                if (!data.user.is_admin) {
+                    showError('❌ Доступ запрещён. Требуются права администратора.');
+                    setTimeout(() => window.location.href = 'index.html', 3000);
+                    return false;
+                }
+
+                return true;
+            } catch (err) {
+                showError('Ошибка проверки доступа: ' + err.message);
+                return false;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('error-container').innerHTML = 
+                `<div class="error-message">${message}</div>`;
+        }
+
+        // Переключение вкладок
+        document.querySelectorAll('.admin-nav button[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.admin-nav button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.getElementById('stats-section').style.display = 'none';
+                document.getElementById('users-section').style.display = 'none';
+                document.getElementById('user-recipes-section').style.display = 'none';
+
+                const tab = btn.dataset.tab;
+                if (tab === 'stats') {
+                    document.getElementById('stats-section').style.display = 'block';
+                    loadStats();
+                } else if (tab === 'users') {
+                    document.getElementById('users-section').style.display = 'block';
+                    loadUsers();
+                }
+            });
+        });
+
+        // Загрузка статистики
+        async function loadStats() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE}/admin/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Ошибка загрузки статистики');
+
+                const data = await response.json();
+                const stats = data.stats;
+
+                document.getElementById('stats-grid').innerHTML = `
+                    <div class="stat-card">
+                        <div class="number">${stats.total_users}</div>
+                        <div class="label">Пользователей</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${stats.total_recipes}</div>
+                        <div class="label">Рецептов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${stats.total_likes}</div>
+                        <div class="label">Лайков</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${stats.total_favorites}</div>
+                        <div class="label">Избранного</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${stats.total_subscriptions}</div>
+                        <div class="label">Подписок</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="number">${stats.total_activities}</div>
+                        <div class="label">Действий</div>
+                    </div>
+                `;
+
+                // Топ авторов
+                const topAuthorsHtml = data.topAuthors.map((author, index) => `
+                    <li>
+                        <span class="rank">#${index + 1}</span>
+                        <img src="${author.avatar_url}" alt="${author.username}">
+                        <div>
+                            <strong>${author.username}</strong>
+                            <br><small>${author.recipes_count} рецептов</small>
+                        </div>
+                    </li>
+                `).join('');
+                document.getElementById('top-authors').innerHTML = topAuthorsHtml || '<li>Нет данных</li>';
+
+                // Топ рецептов
+                const topRecipesHtml = data.topRecipes.map((recipe, index) => `
+                    <li>
+                        <span class="rank">#${index + 1}</span>
+                        <img src="${recipe.image_url || 'https://via.placeholder.com/50'}" alt="${recipe.title}">
+                        <div>
+                            <strong>${recipe.title}</strong>
+                            <br><small>от ${recipe.author_username} • ${recipe.likes_count} лайков</small>
+                        </div>
+                    </li>
+                `).join('');
+                document.getElementById('top-recipes').innerHTML = topRecipesHtml || '<li>Нет данных</li>';
+
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        // Загрузка пользователей
+        async function loadUsers() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Ошибка загрузки пользователей');
+
+                const data = await response.json();
+                const tbody = document.getElementById('users-table-body');
+
+                if (data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="loading">Пользователей нет</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.users.map(user => `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td><img src="${user.avatar_url}" alt="${user.username}" class="user-avatar"></td>
+                        <td>
+                            ${user.username}
+                            ${user.is_admin ? '<span class="badge badge-admin">ADMIN</span>' : ''}
+                        </td>
+                        <td>${user.email}</td>
+                        <td>${user.recipes_count}</td>
+                        <td>${user.total_likes_received}</td>
+                        <td>${user.followers_count}</td>
+                        <td>${new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="viewUserRecipes(${user.id}, '${user.username}')">
+                                Рецепты
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        // Просмотр рецептов пользователя
+        async function viewUserRecipes(userId, username) {
+            const token = localStorage.getItem('token');
+            document.getElementById('users-section').style.display = 'none';
+            document.getElementById('user-recipes-section').style.display = 'block';
+            document.getElementById('current-user-name').textContent = username;
+            document.getElementById('user-recipes-list').innerHTML = '<div class="loading">Загрузка рецептов...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/${userId}/recipes`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Ошибка загрузки рецептов');
+
+                const data = await response.json();
+                const recipesList = document.getElementById('user-recipes-list');
+
+                if (data.recipes.length === 0) {
+                    recipesList.innerHTML = '<p class="loading">У пользователя нет рецептов</p>';
+                    return;
+                }
+
+                recipesList.innerHTML = data.recipes.map(recipe => `
+                    <div class="recipe-card">
+                        <img src="${recipe.image_url || 'https://via.placeholder.com/120'}" alt="${recipe.title}">
+                        <div class="recipe-info">
+                            <h3>${recipe.title}</h3>
+                            <p>${recipe.description}</p>
+                            <p><small>⏱ ${recipe.time} | 📊 ${recipe.difficulty} | 👁 ${recipe.views_count} просмотров</small></p>
+                        </div>
+                        <div class="recipe-actions">
+                            <button class="btn btn-warning" onclick="openEditModal(${recipe.id})">✏️</button>
+                            <button class="btn btn-danger" onclick="deleteRecipe(${recipe.id}, '${recipe.title}')">🗑️</button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function showUsersList() {
+            document.getElementById('user-recipes-section').style.display = 'none';
+            document.getElementById('users-section').style.display = 'block';
+        }
+
+        // Удаление рецепта
+        async function deleteRecipe(recipeId, title) {
+            if (!confirm(`Вы уверены, что хотите удалить рецепт "${title}"?`)) return;
+
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE}/admin/recipes/${recipeId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка удаления');
+                }
+
+                alert('Рецепт удалён');
+                // Перезагружаем список рецептов текущего пользователя
+                const userName = document.getElementById('current-user-name').textContent;
+                // Находим ID пользователя из контекста (можно улучшить)
+                location.reload();
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        // Редактирование рецепта
+        async function openEditModal(recipeId) {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE}/recipes/${recipeId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Ошибка загрузки рецепта');
+
+                const data = await response.json();
+                const recipe = data.recipe;
+
+                document.getElementById('edit-recipe-id').value = recipe.id;
+                document.getElementById('edit-title').value = recipe.title;
+                document.getElementById('edit-description').value = recipe.description;
+                document.getElementById('edit-full-description').value = recipe.full_description || '';
+                document.getElementById('edit-image-url').value = recipe.image_url || '';
+                document.getElementById('edit-time').value = recipe.time;
+                document.getElementById('edit-difficulty').value = recipe.difficulty;
+                document.getElementById('edit-category').value = recipe.category || '';
+                document.getElementById('edit-servings').value = recipe.servings || 4;
+                document.getElementById('edit-instructions').value = recipe.instructions;
+                document.getElementById('edit-ingredients').value = JSON.stringify(recipe.ingredients, null, 2);
+
+                document.getElementById('edit-recipe-modal').classList.add('active');
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-recipe-modal').classList.remove('active');
+        }
+
+        document.getElementById('edit-recipe-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const recipeId = document.getElementById('edit-recipe-id').value;
+
+            let ingredients;
+            try {
+                ingredients = JSON.parse(document.getElementById('edit-ingredients').value);
+            } catch {
+                alert('Неверный формат ингредиентов (должен быть JSON массив)');
+                return;
+            }
+
+            const updateData = {
+                title: document.getElementById('edit-title').value,
+                description: document.getElementById('edit-description').value,
+                full_description: document.getElementById('edit-full-description').value,
+                image_url: document.getElementById('edit-image-url').value,
+                time: document.getElementById('edit-time').value,
+                difficulty: document.getElementById('edit-difficulty').value,
+                category: document.getElementById('edit-category').value,
+                servings: parseInt(document.getElementById('edit-servings').value),
+                instructions: document.getElementById('edit-instructions').value,
+                ingredients: ingredients,
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/recipes/${recipeId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка обновления');
+                }
+
+                alert('Рецепт обновлён');
+                closeEditModal();
+                location.reload();
+
+            } catch (err) {
+                alert('Ошибка: ' + err.message);
+            }
+        });
+
+        // Инициализация
+        (async () => {
+            const hasAccess = await checkAdminAccess();
+            if (hasAccess) {
+                loadStats();
+            }
+        })();
+    </script>
+</body>
+</html>
