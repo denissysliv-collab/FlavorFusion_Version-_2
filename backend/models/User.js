@@ -1,11 +1,11 @@
 /**
  * Модель User
- * 
+ *
  * Все операции с пользователями:
  *  - регистрация, вход
  *  - получение профиля (публично)
  *  - обновление имени и аватара
- * 
+ *
  * ВАЖНО: username и avatar_url НЕ копируются в recipes.
  * Рецепты подтягивают данные автора через JOIN по author_id.
  */
@@ -51,7 +51,7 @@ const User = {
    */
   async findById(id) {
     const result = await pool.query(
-      `SELECT id, username, email, avatar_url, bio, created_at, updated_at, is_admin
+      `SELECT id, username, email, avatar_url, bio, created_at, updated_at, role
        FROM users WHERE id = $1`,
       [id]
     );
@@ -62,7 +62,7 @@ const User = {
    * Обновить имя и/или аватар пользователя
    * Изменения автоматически отразятся во всех рецептах автора,
    * так как рецепты подтягивают данные через JOIN.
-   * 
+   *
    * @param {number} userId
    * @param {object}  data — { username?, avatar_url?, bio? }
    */

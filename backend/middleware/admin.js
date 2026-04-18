@@ -1,12 +1,12 @@
 /**
  * Middleware для проверки роли администратора
- * 
+ *
  * Логика:
  * 1. Проверяет наличие JWT-токена (через authMiddleware)
- * 2. Проверяет поле is_admin в базе данных
+ * 2. Проверяет поле role в базе данных (должно быть 'admin')
  * 3. Если admin — передаёт управление дальше
  * 4. Если нет — возвращает 403
- * 
+ *
  * Использование:
  *   router.get('/admin/users', authMiddleware, adminMiddleware, adminController.getAllUsers);
  */
@@ -24,15 +24,15 @@ async function adminMiddleware(req, res, next) {
       });
     });
 
-    // Получаем полные данные пользователя для проверки is_admin
+    // Получаем полные данные пользователя для проверки role
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
 
-    // Проверяем флаг администратора
-    if (!user.is_admin) {
+    // Проверяем роль администратора
+    if (user.role !== 'admin') {
       return res.status(403).json({ error: 'Доступ запрещён. Требуются права администратора.' });
     }
 
