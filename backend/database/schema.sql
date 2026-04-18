@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash   VARCHAR(255) NOT NULL,
     avatar_url      TEXT         DEFAULT 'https://ui-avatars.com/api/?background=FF6B6B&color=fff&name=U',
     bio             TEXT         DEFAULT '',
+    is_admin        BOOLEAN      DEFAULT FALSE,
     created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );

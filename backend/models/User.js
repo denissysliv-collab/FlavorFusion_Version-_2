@@ -51,7 +51,7 @@ const User = {
    */
   async findById(id) {
     const result = await pool.query(
-      `SELECT id, username, email, avatar_url, bio, created_at, updated_at
+      `SELECT id, username, email, avatar_url, bio, created_at, updated_at, is_admin
        FROM users WHERE id = $1`,
       [id]
     );
