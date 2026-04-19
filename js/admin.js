@@ -1,4 +1,3 @@
-// js/admin.js
 const API_BASE = 'http://localhost:5000/api';
 const token = localStorage.getItem('token');
 
@@ -64,11 +63,12 @@ async function loadUsers() {
             html += `
                 <tr>
                     <td>${user.id}</td>
-                    <td>${escapeHtml(user.username)}</td>
+                    <td>${escapeHtml(user.username || '—')}</td>
                     <td>${escapeHtml(user.email)}</td>
                     <td>${user.is_admin ? '✅ Да' : '❌ Нет'}</td>
                     <td>${new Date(user.created_at).toLocaleDateString()}</td>
                     <td>
+                        <button class="btn-sm btn-primary view-user-recipes" data-id="${user.id}" data-username="${escapeHtml(user.username || user.email)}">📖 Рецепты</button>
                         <button class="btn-sm btn-warning toggle-role" data-id="${user.id}" data-role="${user.is_admin}">${user.is_admin ? 'Снять админа' : 'Назначить админом'}</button>
                         <button class="btn-sm btn-danger delete-user" data-id="${user.id}">Удалить</button>
                     </td>
@@ -77,6 +77,14 @@ async function loadUsers() {
         });
         html += '</tbody></table>';
         container.innerHTML = html;
+
+        document.querySelectorAll('.view-user-recipes').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const userId = btn.dataset.id;
+                const username = btn.dataset.username;
+                showUserRecipes(userId, username);
+            });
+        });
 
         document.querySelectorAll('.toggle-role').forEach(btn => {
             btn.addEventListener('click', async () => {
@@ -113,38 +121,118 @@ async function loadUsers() {
     }
 }
 
+async function showUserRecipes(userId, username) {
+    const recipesTab = document.querySelector('.tab-btn[data-tab="recipes"]');
+    const usersTab = document.querySelector('.tab-btn[data-tab="users"]');
+    const recipesFilter = document.getElementById('recipesFilter');
+    
+    if (usersTab) usersTab.classList.remove('active');
+    if (recipesTab) recipesTab.classList.add('active');
+    if (recipesFilter) recipesFilter.style.display = 'flex';
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const user = await res.json();
+        
+        const searchInput = document.getElementById('authorSearch');
+        if (searchInput && user.email) {
+            searchInput.value = user.email;
+        }
+        
+        await loadRecipes();
+    } catch (err) {
+        console.error('Ошибка получения данных пользователя:', err);
+        await loadRecipes();
+    }
+}
+
 async function loadRecipes() {
     const container = document.getElementById('tabContent');
     if (!container) return;
     container.innerHTML = '<div class="loading">Загрузка рецептов...</div>';
+    const searchInput = document.getElementById('authorSearch');
+    const searchQuery = searchInput ? searchInput.value : '';
+    
     try {
-        const res = await fetch(`${API_BASE}/admin/recipes?page=1&limit=50`, {
+        const res = await fetch(`${API_BASE}/admin/recipes?page=1&limit=50&search=${encodeURIComponent(searchQuery)}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
+        
+        let filterHtml = `
+            <div class="filter-bar">
+                <input type="text" id="authorSearch" placeholder="🔍 Поиск по email или имени автора" value="${escapeHtml(searchQuery)}">
+                <button id="searchBtn" class="btn-sm btn-primary">🔍 Найти</button>
+                <button id="resetSearchBtn" class="btn-sm btn-secondary">🔄 Сбросить</button>
+            </div>
+        `;
+        
         if (!data.recipes || data.recipes.length === 0) {
-            container.innerHTML = '<p>Нет рецептов</p>';
+            container.innerHTML = filterHtml + '<p style="text-align: center; padding: 40px;">📭 Нет рецептов</p>';
+            attachSearchHandlers();
             return;
         }
-        let html = '</table><thead><tr><th>ID</th><th>Название</th><th>Автор</th><th>Дата создания</th><th>Действия</th></tr></thead><tbody>';
+        
+        let html = filterHtml + '<div class="recipes-grid">';
         data.recipes.forEach(recipe => {
+            let imageUrl = recipe.image_url;
+            if (!imageUrl || imageUrl === '' || imageUrl === 'null') {
+                imageUrl = 'https://via.placeholder.com/300x200?text=🍽️+Нет+изображения';
+            }
+            
+            let avatarUrl = recipe.author_avatar;
+            if (!avatarUrl || avatarUrl === '' || avatarUrl === 'null') {
+                avatarUrl = 'https://via.placeholder.com/40x40?text=👤';
+            }
+            
+            const authorDisplay = recipe.author_name || (recipe.author_email ? recipe.author_email.split('@')[0] : 'Unknown');
+            const description = recipe.description || 'Нет описания';
+            
             html += `
-                <tr>
-                    <td>${recipe.id}</td>
-                    <td><a href="recipe-detail.html?id=${recipe.id}" target="_blank">${escapeHtml(recipe.title)}</a></td>
-                    <td>${escapeHtml(recipe.author_name || 'Unknown')}</td>
-                    <td>${new Date(recipe.created_at).toLocaleDateString()}</td>
-                    <td><button class="btn-sm btn-danger delete-recipe" data-id="${recipe.id}">Удалить</button></td>
-                </tr>
+                <div class="recipe-card fade-in" data-id="${recipe.id}" style="cursor: pointer;">
+                    <div class="recipe-image">
+                        <img src="${imageUrl}" alt="${escapeHtml(recipe.title)}" style="width:100%; height:180px; object-fit:cover;" onerror="this.src='https://via.placeholder.com/300x200?text=🍽️+Нет+изображения'">
+                        <div class="recipe-actions">
+                            <button class="btn-action btn-delete delete-recipe" data-id="${recipe.id}" title="Удалить">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="recipe-content">
+                        <h3 class="recipe-title">${escapeHtml(recipe.title)}</h3>
+                        <div class="recipe-author">
+                            <img src="${avatarUrl}" alt="avatar" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;">
+                            <span>${escapeHtml(authorDisplay)}</span>
+                        </div>
+                        <p class="recipe-description">${escapeHtml(description.substring(0, 80))}${description.length > 80 ? '...' : ''}</p>
+                        <div class="recipe-meta">
+                            <span>📅 ${new Date(recipe.created_at).toLocaleDateString()}</span>
+                            <span>📧 ${escapeHtml(recipe.author_email || '—')}</span>
+                        </div>
+                    </div>
+                </div>
             `;
         });
-        html += '</tbody></table>';
+        html += '</div>';
         container.innerHTML = html;
-
+        
+        attachSearchHandlers();
+        
+        document.querySelectorAll('.recipe-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-recipe')) return;
+                const recipeId = card.dataset.id;
+                window.open(`recipe-detail.html?id=${recipeId}`, '_blank');
+            });
+        });
+        
         document.querySelectorAll('.delete-recipe').forEach(btn => {
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
                 const recipeId = btn.dataset.id;
-                if (confirm('Удалить рецепт?')) {
+                if (confirm('Удалить этот рецепт?')) {
                     await fetch(`${API_BASE}/admin/recipes/${recipeId}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -158,6 +246,21 @@ async function loadRecipes() {
         container.innerHTML = '<p>Ошибка загрузки рецептов</p>';
         console.error(err);
     }
+}
+
+function attachSearchHandlers() {
+    const searchBtn = document.getElementById('searchBtn');
+    const resetBtn = document.getElementById('resetSearchBtn');
+    const searchInput = document.getElementById('authorSearch');
+    
+    if (searchBtn) searchBtn.onclick = () => loadRecipes();
+    if (resetBtn) resetBtn.onclick = () => {
+        if (searchInput) searchInput.value = '';
+        loadRecipes();
+    };
+    if (searchInput) searchInput.onkeypress = (e) => {
+        if (e.key === 'Enter') loadRecipes();
+    };
 }
 
 async function loadActivity() {
@@ -193,11 +296,23 @@ async function loadActivity() {
 
 function setupTabs() {
     const tabs = document.querySelectorAll('.tab-btn');
+    const recipesFilter = document.getElementById('recipesFilter');
+    const searchInput = document.getElementById('authorSearch');
+    
     tabs.forEach(btn => {
         btn.addEventListener('click', () => {
             tabs.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const tab = btn.dataset.tab;
+            
+            if (recipesFilter) {
+                recipesFilter.style.display = tab === 'recipes' ? 'flex' : 'none';
+            }
+            
+            if (tab === 'recipes' && searchInput) {
+                searchInput.value = '';
+            }
+            
             if (tab === 'users') loadUsers();
             else if (tab === 'recipes') loadRecipes();
             else if (tab === 'activity') loadActivity();
@@ -231,5 +346,6 @@ function escapeHtml(str) {
     if (isAdmin) {
         await loadStats();
         setupTabs();
+        attachSearchHandlers();
     }
 })();
